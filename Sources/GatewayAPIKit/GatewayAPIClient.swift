@@ -37,13 +37,11 @@ public struct GatewayAPIClient {
                      from sender: String,
                      atTime sendTime: Date? = nil,
                      as textClass: GatewayAPITextClass? = nil) -> EventLoopFuture<GatewayAPINewSMSResponse> {
-        let sendtime = sendTime?.timeIntervalSince1970
-        
         let newSmsRequest = GatewayAPINewSMSRequest(message: message,
                                                     recipients: recipients.map { GatewayAPIRecipient(msisdn: $0) },
                                                     class: textClass,
                                                     sender: sender,
-                                                    sendTime: sendtime)
+                                                    sendTime: sendTime?.timeIntervalSince1970)
         
         return httpRequest(.POST, endPoint: "/rest/mtsms", body: newSmsRequest)
     }
