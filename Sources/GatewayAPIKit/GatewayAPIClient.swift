@@ -53,7 +53,7 @@ public struct GatewayAPIClient {
     ///     Overcharged SMS is only possible in Denmark at the moment
     /// - Parameters:
     ///     - recipient: Array of recipients MSISDN. The number of recipients in a single message is limited to 10.000.
-    ///     - sender: Up to 11 alphanumeric characters, or 15 digits, that will be shown as the sender of the SMS.
+    ///     - sender: Sendername is limited to 1204 or your own shortcode.
     ///     - message: The actual message to send to the recipient
     ///     - amount: The amount to be charged including VAT.
     ///     - currency: Currency used in ISO 4217
@@ -61,7 +61,7 @@ public struct GatewayAPIClient {
     ///     - description: Description of the charge to appear on the phonebill for the MSISDN owner.
     ///     - category: Service category category. SC00-SC34.
     public func sendChargedSMS(to recipient: String,
-                               from sender: String,
+                               from sender: GatewayAPIChargeSender = .default,
                                message: String,
                                amount: Double,
                                currency: String,
@@ -71,7 +71,7 @@ public struct GatewayAPIClient {
         let charge = GatewayAPICharge(amount: amount, currency: currency, code: productCode, category: category, description: description)
         let recipient = GatewayAPIRecipient(msisdn: recipient, charge: charge)
         
-        let chargedSMSRequest = GatewayAPINewSMSRequest(message: message, recipients: [recipient], class: .charge, sender: sender)
+        let chargedSMSRequest = GatewayAPINewSMSRequest(message: message, recipients: [recipient], class: .charge, sender: sender.sender)
         
         return httpRequest(.POST, endPoint: "/rest/mtsms", body: chargedSMSRequest)
     }
