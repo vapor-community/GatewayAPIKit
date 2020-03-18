@@ -1,8 +1,6 @@
 import Foundation
 import NIO
-import NIOFoundationCompat
 import NIOHTTP1
-import NIOHTTPCompression
 import AsyncHTTPClient
 
 extension GatewayAPIClient {
@@ -11,9 +9,9 @@ extension GatewayAPIClient {
         
         do {
             let request = try HTTPClient.Request(url: baseUrl + endPoint,
-                                                 method: method,
-                                                 headers: ["Authorization": "Basic \(authKey)", "Content-Type": "application/json"],
-                                                 body: .data(JSONEncoder().encode(body)))
+                method: method,
+                headers: ["Authorization": "Basic \(authKey)", "Content-Type": "application/json"],
+                body: .data(JSONEncoder().encode(body)))
             
             return httpClient.execute(request: request).flatMap { response in
                 let buffer = response.body ?? ByteBuffer(.init())
