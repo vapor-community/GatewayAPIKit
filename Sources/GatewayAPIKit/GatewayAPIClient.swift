@@ -5,15 +5,16 @@ import NIOHTTP1
 import NIOHTTPCompression
 import AsyncHTTPClient
 
-public final class GatewayAPIClient {
-    static let baseUrl = "https://gatewayapi.com"
+public struct GatewayAPIClient {
+    let baseUrl = "https://gatewayapi.com"
+    let eventLoop: EventLoop
+    let httpClient: HTTPClient
+    let apiKey: String
     
-    private let httpClient: HTTPClient
-    private let apiKey: String
-    
-    public init(eventLoopGroup: EventLoopGroup, apiKey: String) {
+    public init(eventLoop: EventLoop, httpClient: HTTPClient, apiKey: String) {
+        self.eventLoop = eventLoop
+        self.httpClient = httpClient
         self.apiKey = apiKey
-        httpClient = HTTPClient(eventLoopGroupProvider: .shared(eventLoopGroup))
     }
     
     /// Send a new SMS to a list of recipients
@@ -29,54 +30,49 @@ public final class GatewayAPIClient {
     ///     - message: The actual message to send to the recipients
     ///     - recipients: Array of recipients MSISDN. The number of recipients in a single message is limited to 10.000.
     ///     - sender: Up to 11 alphanumeric characters, or 15 digits, that will be shown as the sender of the SMS.
+    ///     - sendTime: Date to schedule message sending at certain time.
     ///     - textClass: Default “standard”. The message class to use for this request. If specified it must be the same for all messages in the request.
     public func send(_ message: String,
                      to recipients: [String],
                      from sender: String,
-                     as textClass: GatewayAPITextClass = .standard) -> EventLoopFuture<GatewayAPINewSMSResponse> {
+                     atTime sendTime: Date? = nil,
+                     as textClass: GatewayAPITextClass? = nil) -> EventLoopFuture<GatewayAPINewSMSResponse> {
+        let sendtime = sendTime?.timeIntervalSince1970
+        
         let newSmsRequest = GatewayAPINewSMSRequest(message: message,
                                                     recipients: recipients.map { GatewayAPIRecipient(msisdn: $0) },
                                                     class: textClass,
-                                                    sender: sender)
+                                                    sender: sender,
+                                                    sendTime: sendtime)
         
-        return request(.POST, endPoint: "/rest/mtsms", body: newSmsRequest)
+        return httpRequest(.POST, endPoint: "/rest/mtsms", body: newSmsRequest)
     }
     
-    private func request<Body, Response>(_ method: HTTPMethod, endPoint: String, body: Body) -> EventLoopFuture<Response> where Response: Decodable, Body: Encodable {
-        let authKey = "\(apiKey):".data(using: .utf8)!.base64EncodedString()
+    /// Send a charged SMS to one receipient
+    /// - Important
+    ///     Overcharged SMS is only possible in Denmark at the moment
+    /// - Parameters:
+    ///     - recipient: Array of recipients MSISDN. The number of recipients in a single message is limited to 10.000.
+    ///     - sender: Up to 11 alphanumeric characters, or 15 digits, that will be shown as the sender of the SMS.
+    ///     - message: The actual message to send to the recipient
+    ///     - amount: The amount to be charged including VAT.
+    ///     - currency: Currency used in ISO 4217
+    ///     - productCode: Product code. P01-P10.
+    ///     - description: Description of the charge to appear on the phonebill for the MSISDN owner.
+    ///     - category: Service category category. SC00-SC34.
+    public func sendChargedSMS(to recipient: String,
+                               from sender: String,
+                               message: String,
+                               amount: Double,
+                               currency: String,
+                               productCode: String,
+                               description: String,
+                               category: String) -> EventLoopFuture<GatewayAPINewSMSResponse> {
+        let charge = GatewayAPICharge(amount: amount, currency: currency, code: productCode, category: category, description: description)
+        let recipient = GatewayAPIRecipient(msisdn: recipient, charge: charge)
         
-        do {
-            let request = try HTTPClient.Request(url: GatewayAPIClient.baseUrl + endPoint,
-                                                 method: method,
-                                                 headers: ["Authorization": "Basic \(authKey)", "Content-Type": "application/json"],
-                                                 body: .data(JSONEncoder().encode(body)))
-            
-            return httpClient.execute(request: request).flatMap { response in
-                guard var buffer = response.body else {
-                    fatalError("GatewayAPI body missing")
-                }
-
-                let data = buffer.readData(length: buffer.readableBytes)!
-                let decoder = JSONDecoder()
-                
-                do {
-                    guard response.status == .ok else {
-                        return self.httpClient.eventLoopGroup.next().makeFailedFuture(try decoder.decode(GatewayAPIError.self, from: data))
-                    }
-                    
-                    return self.httpClient.eventLoopGroup.next().makeSucceededFuture(try decoder.decode(Response.self, from: data))
-                } catch {
-                    return self.httpClient.eventLoopGroup.next().makeFailedFuture(error)
-                }
-            }
-        } catch {
-            return httpClient.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    deinit {
-        try? httpClient.syncShutdown()
+        let chargedSMSRequest = GatewayAPINewSMSRequest(message: message, recipients: [recipient], class: .charge, sender: sender)
+        
+        return httpRequest(.POST, endPoint: "/rest/mtsms", body: chargedSMSRequest)
     }
 }
-
-

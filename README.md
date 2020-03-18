@@ -6,15 +6,16 @@
 To use GatewayAPI, please add the following to your `Package.swift` file.
 
 ~~~~swift
-.package(url: "https://github.com/madsodgaard/GatewayAPIKit.git", from: "0.1.0")
+.package(url: "https://github.com/madsodgaard/GatewayAPIKit.git", from: "1.0.0")
 ~~~~
 
 ## How to use
 All you need to send a text message is to initialize a `GatewayAPIClient`:
 
 ~~~~swift
-let elg = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-let client = GatewayAPIClient(eventLoopGroup: elg, apiKey: "apikey")
+let eventLoop: EventLoop = ...
+let httpClient = HTTPClient(...)
+let client = GatewayAPIClient(eventLoop: elg.next(), httpClient: httpClient, apiKey: "")
 ~~~~
 
 Please store your API key in storage such as environment variables and not directly in code.
