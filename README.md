@@ -15,7 +15,7 @@ All you need to send a text message is to initialize a `GatewayAPIClient`:
 ~~~~swift
 let eventLoop: EventLoop = ...
 let httpClient = HTTPClient(...)
-let client = GatewayAPIClient(eventLoop: elg.next(), httpClient: httpClient, apiKey: "")
+let client = GatewayAPIClient(eventLoop: eventLoop, httpClient: httpClient, apiKey: "")
 ~~~~
 
 Please store your API key in storage such as environment variables and not directly in code.
