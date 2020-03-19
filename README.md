@@ -6,13 +6,28 @@
 To use GatewayAPI, please add the following to your `Package.swift` file.
 
 ~~~~swift
-.package(url: "https://github.com/vapor-community/GatewayAPIKit.git", from: "0.1.0")
+dependencies: [
+    ...
+    .package(url: "https://github.com/vapor-community/GatewayAPIKit.git", from: "1.0.0")
+],
+...
+targets: [
+    .target(
+        name: ...
+        dependencies: [
+            ...
+            .product(name: "GatewayAPIKit", package: "GatewayAPIKit")
+        ]
+    )
+]
 ~~~~
 
 ## How to use
 All you need to send a text message is to initialize a `GatewayAPIClient`:
 
 ~~~~swift
+import GatewayAPIKit
+
 let eventLoop: EventLoop = ...
 let httpClient = HTTPClient(...)
 let client = GatewayAPIClient(eventLoop: eventLoop, httpClient: httpClient, apiKey: "")
