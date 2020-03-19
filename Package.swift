@@ -3,9 +3,6 @@ import PackageDescription
 
 let package = Package(
     name: "GatewayAPIKit",
-    platforms: [
-        .macOS(.v10_15)
-    ],
     products: [
         .library(
             name: "GatewayAPIKit",
