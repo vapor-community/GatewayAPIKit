@@ -13,7 +13,7 @@ extension GatewayAPIClient {
                 headers: ["Authorization": "Basic \(authKey)", "Content-Type": "application/json"],
                 body: .data(JSONEncoder().encode(body)))
             
-            return httpClient.execute(request: request).flatMap { response in
+            return httpClient.execute(request: request, eventLoop: .delegate(on: eventLoop)).flatMap { response in
                 let buffer = response.body ?? ByteBuffer(.init())
                 let data = Data(buffer.readableBytesView)
                 let decoder = JSONDecoder()

@@ -1,10 +1,10 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.2
 import PackageDescription
 
 let package = Package(
     name: "GatewayAPIKit",
     platforms: [
-        .macOS(.v10_14)
+        .macOS(.v10_15)
     ],
     products: [
         .library(
@@ -12,15 +12,18 @@ let package = Package(
             targets: ["GatewayAPIKit"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.0.0")
     ],
     targets: [
         .target(
             name: "GatewayAPIKit",
-            dependencies: ["AsyncHTTPClient", "NIOFoundationCompat"]),
+            dependencies: [
+                .product(name: "AsyncHTTPClient", package: "async-http-client"),
+        ]),
         .testTarget(
             name: "GatewayAPIKitTests",
-            dependencies: ["GatewayAPIKit"]),
+            dependencies: [
+                .target(name: "GatewayAPIKit")
+        ]),
     ]
 )
